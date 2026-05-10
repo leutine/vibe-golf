@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://bja62h36dhan5"]
+
+[ext_resource type="PackedScene" path="res://ball/ball.tscn" id="1_ball"]
+[ext_resource type="PackedScene" uid="uid://c0urse001" path="res://course/course.tscn" id="2_course"]
+[ext_resource type="Script" uid="uid://bww8vbbj3yatx" path="res://main.gd" id="3_main_script"]
+
+[node name="Main" type="Node3D" unique_id=290463964]
+script = ExtResource("3_main_script")
+
+[node name="Course" parent="." unique_id=1415473244 instance=ExtResource("2_course")]
+
+[node name="Ball" parent="." unique_id=713360412 instance=ExtResource("1_ball")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.25, 0)
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=468579372]
+transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766045, 0, -0.766045, 0.642788, 0, 12, 12)
+fov = 50.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=647188337]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 10, 0)
+shadow_enabled = true
+
+[node name="StrokeLabel" type="Label" parent="." unique_id=1896793791]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 24
+text = "Strokes: 0"
+horizontal_alignment = 2
+
+[node name="AimLine" type="Line2D" parent="." unique_id=251124496]
+points = PackedVector2Array(0, 0, 100, 0)
+width = 3.0
+default_color = Color(1, 1, 0, 1)
