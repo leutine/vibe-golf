@@ -1,6 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://ball001"]
+[gd_scene format=3 uid="uid://ball001"]
 
-[ext_resource type="Script" path="res://ball/ball.gd" id="1_ball_script"]
+[ext_resource type="Script" uid="uid://cp4421jqnniga" path="res://ball/ball.gd" id="1_ball_script"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_1"]
 radius = 0.25
@@ -9,15 +9,15 @@ radius = 0.25
 radius = 0.25
 height = 0.5
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
-albedo_color = Color(1, 0.2, 0.2, 1)
-
-[node name="Ball" type="RigidBody3D"]
+[node name="Ball" type="RigidBody3D" unique_id=1720130869]
 script = ExtResource("1_ball_script")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1054565686]
 shape = SubResource("SphereShape3D_1")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1477481332]
 mesh = SubResource("SphereMesh_1")
-surface_material_override/0 = SubResource("StandardMaterial3D_1")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=11711368]
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=2017612226]

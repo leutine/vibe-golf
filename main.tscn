@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://bja62h36dhan5"]
 
-[ext_resource type="PackedScene" path="res://ball/ball.tscn" id="1_ball"]
 [ext_resource type="PackedScene" uid="uid://c0urse001" path="res://course/course.tscn" id="2_course"]
 [ext_resource type="Script" uid="uid://bww8vbbj3yatx" path="res://main.gd" id="3_main_script"]
 
@@ -9,8 +8,11 @@ script = ExtResource("3_main_script")
 
 [node name="Course" parent="." unique_id=1415473244 instance=ExtResource("2_course")]
 
-[node name="Ball" parent="." unique_id=713360412 instance=ExtResource("1_ball")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.25, 0)
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1513108204]
+_spawnable_scenes = PackedStringArray("uid://ball001")
+spawn_path = NodePath("../Balls")
+
+[node name="Balls" type="Node3D" parent="." unique_id=816375607]
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=468579372]
 transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766045, 0, -0.766045, 0.642788, 0, 12, 12)

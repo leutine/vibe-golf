@@ -1,28 +1,144 @@
 extends Node3D
 
-@onready var ball: RigidBody3D = $Ball
+const MAX_DRAG := 250.0
+const MAX_POWER := 20.0
+
+const PLAYER_COLORS := [
+	Color(1, 0.2, 0.2),
+	Color(0.2, 0.4, 1),
+	Color(0.2, 0.8, 0.2),
+	Color(1, 0.8, 0.2),
+	Color(0.8, 0.2, 1)
+]
+
+const SPAWN_PATH := "res://ball/ball.tscn"
+
 @onready var stroke_label: Label = $StrokeLabel
 @onready var aim_line: Line2D = $AimLine
 @onready var camera: Camera3D = $Camera3D
 @onready var course: Node3D = $Course
+@onready var balls_container: Node3D = $Balls
+@onready var spawner: MultiplayerSpawner = $MultiplayerSpawner
 
-const BALL_START_POS := Vector3(-5, 0.25, 0)
-const MAX_DRAG := 250.0
-const MAX_POWER := 20.0
-
+var peer_id: int = 1
+var is_host := false
 var aim_start := Vector2.ZERO
-var is_won := false
+var my_ball: RigidBody3D
+var players: Dictionary = {}
+var scored_players: Array = []
 
 func _ready() -> void:
-	ball.stroke_added.connect(_on_stroke_added)
+	peer_id = multiplayer.get_unique_id()
+	is_host = multiplayer.is_server()
+
+	spawner.spawned.connect(_on_spawn_received)
 	course.ball_entered_hole.connect(_on_ball_entered_hole)
 	aim_line.visible = false
+	
+	if is_host:
+		multiplayer.peer_connected.connect(_on_peer_connected)
+		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+		spawn_ball(peer_id)
+	else:
+		rpc_id(1, "request_spawn", peer_id)
+
+func _on_spawn_received(node: Node) -> void:
+	print("Spawn received: ", node.name, " peer_id=", peer_id)
+
+@rpc("any_peer")
+func request_spawn(id: int) -> void:
+	if not is_host:
+		return
+	spawn_ball(id)
+	for p_id in players:
+		rpc_id(id, "spawn_ball_rpc", SPAWN_PATH, p_id, players[p_id].position, players[p_id].color)
+	rpc_id(id, "spawn_ball_rpc", SPAWN_PATH, id, players[id].position, players[id].color)
+
+@rpc
+func spawn_ball_rpc(path: String, id: int, pos: Vector3, color: Color) -> void:
+	if players.has(id):
+		return
+	var scene := load(path)
+	var ball: RigidBody3D = scene.instantiate()
+	ball.name = "Ball_%d" % id
+	ball.owner_peer_id = id
+	ball.ball_color = color
+	ball.global_position = pos
+	
+	if id == peer_id:
+		ball.set_multiplayer_authority(id)
+	
+	balls_container.add_child(ball)
+	
+	players[id] = {
+		"ball": ball,
+		"position": pos,
+		"color": color
+	}
+	
+	if id == peer_id:
+		my_ball = ball
+		ball.stroke_added.connect(_on_stroke_added)
+	
+	print("Spawned ball for id=", id, ", peer_id=", peer_id)
+
+func _on_peer_connected(id: int) -> void:
+	print("Peer connected: ", id)
+	spawn_ball(id)
+
+func _on_peer_disconnected(id: int) -> void:
+	print("Peer disconnected: ", id)
+	if players.has(id):
+		players[id].ball.queue_free()
+		players.erase(id)
+
+func spawn_ball(id: int) -> void:
+	if players.has(id):
+		return
+	var pos := _get_random_spawn_position()
+	var color = PLAYER_COLORS[(id - 1) % PLAYER_COLORS.size()]
+	
+	var scene := load(SPAWN_PATH)
+	var ball: RigidBody3D = scene.instantiate()
+	ball.name = "Ball_%d" % id
+	ball.owner_peer_id = id
+	ball.ball_color = color
+	ball.global_position = pos
+	
+	if id == peer_id:
+		ball.set_multiplayer_authority(id)
+	
+	balls_container.add_child(ball)
+	
+	players[id] = {
+		"ball": ball,
+		"position": pos,
+		"color": color
+	}
+	
+	if id == peer_id:
+		my_ball = ball
+		ball.stroke_added.connect(_on_stroke_added)
+	
+	rpc("spawn_ball_rpc", SPAWN_PATH, id, pos, color)
+
+func _get_random_spawn_position() -> Vector3:
+	var x := randf_range(-4.0, 4.0)
+	var z := randf_range(-2.5, 2.5)
+	return Vector3(x, 0.25, z)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
-		reset_ball()
+		reset_my_ball()
+		return
 	
-	if ball.is_moving or is_won:
+	if not my_ball:
+		return
+	
+	if my_ball.linear_velocity.length() > 0.1:
+		return
+	
+	if scored_players.has(peer_id):
 		return
 	
 	if event is InputEventMouseButton:
@@ -30,27 +146,25 @@ func _input(event: InputEvent) -> void:
 			if event.pressed:
 				aim_start = event.position
 				aim_line.visible = true
-			else:
+			elif aim_line.visible:
 				aim_line.visible = false
 				var drag_vector = aim_start - event.position
 				if drag_vector.length() > 10:
-					var drag_length = mini(drag_vector.length(), MAX_DRAG)
-					var power = (drag_length / MAX_DRAG) * MAX_POWER
-					var direction = Vector3(-drag_vector.x, 0, -drag_vector.y).normalized()
-					ball.apply_impulse(direction * power)
-					ball.stroke_count += 1
-					ball.is_moving = true
-					_on_stroke_added(ball.stroke_count)
+					var drag_length := mini(drag_vector.length(), MAX_DRAG)
+					var power := (drag_length / MAX_DRAG) * MAX_POWER
+					var direction := Vector3(-drag_vector.x, 0, -drag_vector.y).normalized()
+					
+					my_ball.apply_stroke(power, direction)
 
 func _process(_delta: float) -> void:
-	if aim_line.visible:
+	if aim_line.visible and my_ball:
 		var mouse_pos := get_viewport().get_mouse_position()
-		var ball_screen_pos := camera.unproject_position(ball.global_position)
+		var ball_screen_pos := camera.unproject_position(my_ball.global_position)
 		aim_line.clear_points()
 		aim_line.add_point(ball_screen_pos)
 		var drag_vector := aim_start - mouse_pos
-		var clamped_drag_length = mini(drag_vector.length(), MAX_DRAG)
-		var clamped_drag = drag_vector.normalized() * clamped_drag_length
+		var clamped_drag_length := mini(drag_vector.length(), MAX_DRAG)
+		var clamped_drag := drag_vector.normalized() * clamped_drag_length
 		var end_pos := ball_screen_pos + Vector2(-clamped_drag.x * 0.3, -clamped_drag.y * 0.3)
 		aim_line.add_point(end_pos)
 		var power := mini(int((drag_vector.length() / MAX_DRAG) * 100), 100)
@@ -59,11 +173,27 @@ func _process(_delta: float) -> void:
 func _on_stroke_added(count: int) -> void:
 	stroke_label.text = "Strokes: %d" % count
 
-func _on_ball_entered_hole() -> void:
-	is_won = true
-	stroke_label.text = "You Win! Strokes: %d" % ball.stroke_count
+func _on_ball_entered_hole(ball: RigidBody3D) -> void:
+	var scorer_id := -1
+	for id in players:
+		if players[id].ball == ball:
+			scorer_id = id
+			break
+	
+	if scorer_id == -1:
+		return
+	
+	if not scored_players.has(scorer_id):
+		scored_players.append(scorer_id)
+		stroke_label.text = "Player %d scored!" % scorer_id
 
-func reset_ball() -> void:
-	is_won = false
-	ball.reset(BALL_START_POS)
-	_on_stroke_added(0)
+func reset_my_ball() -> void:
+	if not my_ball:
+		return
+	
+	scored_players.erase(peer_id)
+	var pos := _get_random_spawn_position()
+	my_ball.do_reset(pos)
+	if players.has(peer_id):
+		players[peer_id].position = pos
+	stroke_label.text = "Strokes: 0"

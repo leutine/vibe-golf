@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Vibe Golf"
-run/main_scene="res://main.tscn"
+run/main_scene="res://lobby.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -20,6 +20,11 @@ config/icon="res://icon.svg"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[networking]
+
+limits/web_socket_max_message_sizekb=4096
+limits/web_socket_max_frame_sizekb=256
 
 [physics]
 
