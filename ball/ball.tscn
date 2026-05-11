@@ -9,6 +9,8 @@ radius = 0.25
 radius = 0.25
 height = 0.5
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_6plaf"]
+
 [node name="Ball" type="RigidBody3D" unique_id=1720130869]
 script = ExtResource("1_ball_script")
 
@@ -19,5 +21,7 @@ shape = SubResource("SphereShape3D_1")
 mesh = SubResource("SphereMesh_1")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=11711368]
+replication_interval = 0.05
+replication_config = SubResource("SceneReplicationConfig_6plaf")
 
 [node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=2017612226]

@@ -12,26 +12,29 @@ const PLAYER_COLORS := [
 ]
 
 const SPAWN_PATH := "res://ball/ball.tscn"
+var ball_scene: PackedScene = preload("res://ball/ball.tscn")
 
 @onready var stroke_label: Label = $StrokeLabel
 @onready var aim_line: Line2D = $AimLine
 @onready var camera: Camera3D = $Camera3D
 @onready var course: Node3D = $Course
-@onready var balls_container: Node3D = $Balls
 @onready var spawner: MultiplayerSpawner = $MultiplayerSpawner
 
 var peer_id: int = 1
 var is_host := false
 var aim_start := Vector2.ZERO
-var my_ball: RigidBody3D
+var my_ball: Ball
 var players: Dictionary = {}
 var scored_players: Array = []
 
 func _ready() -> void:
+	Engine.max_fps = 60
 	peer_id = multiplayer.get_unique_id()
 	is_host = multiplayer.is_server()
 
-	spawner.spawned.connect(_on_spawn_received)
+	spawner.spawn_function = _spawn_ball_custom
+	spawner.spawned.connect(_on_ball_spawned)
+
 	course.ball_entered_hole.connect(_on_ball_entered_hole)
 	aim_line.visible = false
 	
@@ -39,48 +42,28 @@ func _ready() -> void:
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 		spawn_ball(peer_id)
-	else:
-		rpc_id(1, "request_spawn", peer_id)
 
-func _on_spawn_received(node: Node) -> void:
-	print("Spawn received: ", node.name, " peer_id=", peer_id)
+func _spawn_ball_custom(data: Dictionary) -> Node:
+	var ball: Ball = ball_scene.instantiate()
+	ball.name = "Ball_%d" % data["id"]
+	ball.ball_color = data["color"]
+	ball.position = data["position"]
+	ball.set_multiplayer_authority(1)
+	return ball
 
-@rpc("any_peer")
-func request_spawn(id: int) -> void:
-	if not is_host:
-		return
-	spawn_ball(id)
-	for p_id in players:
-		rpc_id(id, "spawn_ball_rpc", SPAWN_PATH, p_id, players[p_id].position, players[p_id].color)
-	rpc_id(id, "spawn_ball_rpc", SPAWN_PATH, id, players[id].position, players[id].color)
-
-@rpc
-func spawn_ball_rpc(path: String, id: int, pos: Vector3, color: Color) -> void:
-	if players.has(id):
-		return
-	var scene := load(path)
-	var ball: RigidBody3D = scene.instantiate()
-	ball.name = "Ball_%d" % id
-	ball.owner_peer_id = id
-	ball.ball_color = color
-	ball.global_position = pos
-	
-	if id == peer_id:
-		ball.set_multiplayer_authority(id)
-	
-	balls_container.add_child(ball)
-	
+func _on_ball_spawned(ball: Ball) -> void:
+	print("_on_ball_spawned")
+	var id_str := ball.name.trim_prefix("Ball_")
+	var id := id_str.to_int()
 	players[id] = {
 		"ball": ball,
-		"position": pos,
-		"color": color
+		"position": ball.global_position,
+		"color": ball.ball_color
 	}
-	
+	# Если это наш мяч — сохраняем ссылку
 	if id == peer_id:
 		my_ball = ball
 		ball.stroke_added.connect(_on_stroke_added)
-	
-	print("Spawned ball for id=", id, ", peer_id=", peer_id)
 
 func _on_peer_connected(id: int) -> void:
 	print("Peer connected: ", id)
@@ -95,32 +78,26 @@ func _on_peer_disconnected(id: int) -> void:
 func spawn_ball(id: int) -> void:
 	if players.has(id):
 		return
+
 	var pos := _get_random_spawn_position()
 	var color = PLAYER_COLORS[(id - 1) % PLAYER_COLORS.size()]
 	
-	var scene := load(SPAWN_PATH)
-	var ball: RigidBody3D = scene.instantiate()
-	ball.name = "Ball_%d" % id
-	ball.owner_peer_id = id
-	ball.ball_color = color
-	ball.global_position = pos
-	
-	if id == peer_id:
-		ball.set_multiplayer_authority(id)
-	
-	balls_container.add_child(ball)
+	var ball: Ball = spawner.spawn({
+		"id": id,
+		"position": pos,
+		"color": color
+	})
 	
 	players[id] = {
 		"ball": ball,
-		"position": pos,
-		"color": color
+		"position": ball.global_position,
+		"color": ball.ball_color
 	}
-	
+
+	# Если это наш мяч — сохраняем ссылку
 	if id == peer_id:
 		my_ball = ball
 		ball.stroke_added.connect(_on_stroke_added)
-	
-	rpc("spawn_ball_rpc", SPAWN_PATH, id, pos, color)
 
 func _get_random_spawn_position() -> Vector3:
 	var x := randf_range(-4.0, 4.0)
@@ -154,7 +131,10 @@ func _input(event: InputEvent) -> void:
 					var power := (drag_length / MAX_DRAG) * MAX_POWER
 					var direction := Vector3(-drag_vector.x, 0, -drag_vector.y).normalized()
 					
-					my_ball.apply_stroke(power, direction)
+					if is_host:
+						my_ball.apply_stroke(power, direction)
+					else:
+						_apply_stroke_rpc.rpc_id(1, peer_id, power, direction)
 
 func _process(_delta: float) -> void:
 	if aim_line.visible and my_ball:
@@ -197,3 +177,13 @@ func reset_my_ball() -> void:
 	if players.has(peer_id):
 		players[peer_id].position = pos
 	stroke_label.text = "Strokes: 0"
+
+@rpc("any_peer", "call_remote", "reliable")
+func _apply_stroke_rpc(player_id: int, power: float, direction: Vector3):
+	print("RPC received on: ", get_path())
+	print("Sender ID: ", multiplayer.get_remote_sender_id())
+	print("_apply_stroke_rpc called! player_id=", player_id)
+	if not is_host:
+		return
+	if players.has(player_id):
+		players[player_id].ball.apply_stroke(power, direction)

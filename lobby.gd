@@ -27,7 +27,6 @@ func _on_host_pressed() -> void:
 	peer_id = 1
 	is_host = true
 	status_label.text = "Hosting on port %d..." % DEFAULT_PORT
-	await get_tree().create_timer(0.5).timeout
 	get_tree().change_scene_to_file("res://main.tscn")
 
 func _on_join_pressed() -> void:
@@ -53,7 +52,6 @@ func _on_peer_disconnected(id: int) -> void:
 
 func _on_connected_to_server() -> void:
 	status_label.text = "Connected!"
-	await get_tree().create_timer(0.5).timeout
 	get_tree().change_scene_to_file("res://main.tscn")
 
 func _on_connection_failed() -> void:
