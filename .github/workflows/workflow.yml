@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import assets
+        run: godot --headless --import
+
+      - name: Build Windows executable
+        run: |
+          mkdir -p build
+          godot --headless --export-release "Windows Desktop" build/game.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: build/
