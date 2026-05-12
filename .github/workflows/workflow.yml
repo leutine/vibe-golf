@@ -32,8 +32,6 @@ jobs:
         run: |
           mkdir -v -p build
           EXPORT_DIR="$(readlink -f build)"
-          ls -la
-          cd $PROJECT_PATH
           godot --headless --export-debug "Windows Desktop" $EXPORT_DIR/$EXPORT_NAME.exe
 
       - name: Upload artifact
