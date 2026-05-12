@@ -15,7 +15,7 @@ spawn_path = NodePath("../Balls")
 [node name="Balls" type="Node3D" parent="." unique_id=816375607]
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=468579372]
-transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766045, 0, -0.766045, 0.642788, 0, 12, 12)
+transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766045, 0, -0.766045, 0.642788, 5, 12, 15)
 fov = 50.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=647188337]
@@ -34,8 +34,3 @@ grow_horizontal = 0
 theme_override_font_sizes/font_size = 24
 text = "Strokes: 0"
 horizontal_alignment = 2
-
-[node name="AimLine" type="Line2D" parent="." unique_id=251124496]
-points = PackedVector2Array(0, 0, 100, 0)
-width = 3.0
-default_color = Color(1, 1, 0, 1)

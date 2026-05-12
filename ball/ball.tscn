@@ -2,6 +2,10 @@
 
 [ext_resource type="Script" uid="uid://cp4421jqnniga" path="res://ball/ball.gd" id="1_ball_script"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_6plaf"]
+friction = 2.5
+absorbent = true
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_1"]
 radius = 0.25
 
@@ -10,8 +14,23 @@ radius = 0.25
 height = 0.5
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_6plaf"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+properties/1/path = NodePath(".:angular_velocity")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:linear_velocity")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:ball_color")
+properties/3/spawn = true
+properties/3/replication_mode = 2
 
-[node name="Ball" type="RigidBody3D" unique_id=1720130869]
+[node name="Ball" type="RigidBody3D" unique_id=1720130869 groups=["Players"]]
+physics_material_override = SubResource("PhysicsMaterial_6plaf")
+linear_damp = 0.5
+angular_damp = 0.5
 script = ExtResource("1_ball_script")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1054565686]
@@ -24,4 +43,7 @@ mesh = SubResource("SphereMesh_1")
 replication_interval = 0.05
 replication_config = SubResource("SceneReplicationConfig_6plaf")
 
-[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=2017612226]
+[node name="AimLine" type="Line2D" parent="." unique_id=636456926]
+points = PackedVector2Array(0, 0, 100, 0)
+width = 3.0
+default_color = Color(1, 1, 0, 1)

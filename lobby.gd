@@ -2,31 +2,23 @@ extends Control
 
 const DEFAULT_PORT := 4567
 const MAX_PLAYERS := 5
+const PLAYER = preload("res://ball/ball.tscn")
 
 @onready var ip_input: LineEdit = $VBox/IPInput
 @onready var status_label: Label = $VBox/StatusLabel
 
-var peer_id: int = 0
-var is_host := false
-
-func _ready() -> void:
-	ip_input.text = "localhost"
-	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
-	multiplayer.connection_failed.connect(_on_connection_failed)
+var enet_peer := ENetMultiplayerPeer.new()
 
 func _on_host_pressed() -> void:
-	var server := ENetMultiplayerPeer.new()
-	var err := server.create_server(DEFAULT_PORT, MAX_PLAYERS)
+	var err := enet_peer.create_server(DEFAULT_PORT, MAX_PLAYERS)
 	if err != OK:
-		status_label.text = "Failed to host: %s" % err
+		print("Failed to host: %s" % err)
 		return
-	
-	multiplayer.multiplayer_peer = server
-	peer_id = 1
-	is_host = true
-	status_label.text = "Hosting on port %d..." % DEFAULT_PORT
+
+	multiplayer.multiplayer_peer = enet_peer
+	multiplayer.peer_connected.connect(add_player)
+	multiplayer.peer_disconnected.connect(remove_player)
+	print("Hosting on port %d..." % DEFAULT_PORT)
 	get_tree().change_scene_to_file("res://main.tscn")
 
 func _on_join_pressed() -> void:
@@ -34,25 +26,36 @@ func _on_join_pressed() -> void:
 	if ip.is_empty():
 		ip = "localhost"
 	
-	var client := ENetMultiplayerPeer.new()
-	var err := client.create_client(ip, DEFAULT_PORT)
+	var err := enet_peer.create_client(ip, DEFAULT_PORT)
 	if err != OK:
-		status_label.text = "Failed to connect: %s" % err
+		print("Failed to connect: %s" % err)
 		return
 	
-	multiplayer.multiplayer_peer = client
-	is_host = false
-	status_label.text = "Connecting to %s..." % ip
+	multiplayer.multiplayer_peer = enet_peer
+	multiplayer.peer_connected.connect(add_player) 
+	multiplayer.peer_disconnected.connect(remove_player)
+	multiplayer.connected_to_server.connect(on_connected_to_server)
+	print("Connecting to %s..." % ip)
 
-func _on_peer_connected(id: int) -> void:
-	status_label.text = "Player %d connected" % id
-
-func _on_peer_disconnected(id: int) -> void:
-	status_label.text = "Player %d disconnected" % id
-
-func _on_connected_to_server() -> void:
-	status_label.text = "Connected!"
+func on_connected_to_server():
+	add_player(multiplayer.get_unique_id())
 	get_tree().change_scene_to_file("res://main.tscn")
 
-func _on_connection_failed() -> void:
-	status_label.text = "Connection failed!"
+func add_player(peer_id: int):
+	#if peer_id == 1:
+		#return
+	#var new_player = PLAYER.instantiate()
+	#new_player.name = str(peer_id)
+	#var rand_x = randf_range(-5.0, 5.0)
+	#var rand_z = randf_range(-5.0, 5.0)
+	#new_player.position = Vector3(rand_x, 1.0, rand_z)
+	pass
+
+func remove_player(peer_id):
+	pass
+	#if peer_id == 1:
+		#leave_server()
+	#var players: Array[Node] = get_tree().get_nodes_in_group('Players')
+	#var player_to_remove = players.find_custom(func(item): return item.name == str(peer_id))
+	#if player_to_remove != -1:
+		#players[player_to_remove].queue_free()

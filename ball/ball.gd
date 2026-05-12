@@ -2,87 +2,50 @@ extends RigidBody3D
 class_name Ball
 
 signal stroke_added(count: int)
-signal entered_hole
 
-@export var ball_color: Color = Color(1, 0.2, 0.2, 1)
+const MAX_DRAG := 250.0
+const MAX_POWER := 20.0
 
+var aim_start := Vector2.ZERO
 var stroke_count := 0
+var material = StandardMaterial3D.new()
 
-func setup_replication_config():
-	var sync = $MultiplayerSynchronizer
-	var config = sync.replication_config
-	
-	if config.has_property(NodePath(":global_position")):
-		return
+@onready var aim_line: Line2D = $AimLine
 
-	config.add_property(NodePath(":global_position"))
-	config.add_property(NodePath(":global_rotation"))
-	config.add_property(NodePath(":linear_velocity"))
-	config.add_property(NodePath(":angular_velocity"))
-	
-	if not multiplayer.is_server():
-		print("I am client! %s" % multiplayer.get_unique_id())
-		sync.replication_interval = 9999.0
-		sync.public_visibility = false
-	
-	if multiplayer.is_server():
-		print("I am server! %s" % multiplayer.get_unique_id())
-		sync.replication_interval = 0.05
-		config.property_set_replication_mode(
-			NodePath(":linear_velocity"), 
-			SceneReplicationConfig.REPLICATION_MODE_ALWAYS
-		)
-		config.property_set_replication_mode(
-			NodePath(":angular_velocity"), 
-			SceneReplicationConfig.REPLICATION_MODE_ALWAYS
-		)
+@export var ball_color := Color.BLACK:
+	set(new_color):
+		ball_color = new_color
+		material.albedo_color = new_color
+		$MeshInstance3D.material_override = material
 
-		config.property_set_replication_mode(
-			NodePath(":global_position"), 
-			SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
-		)
-		config.property_set_replication_mode(
-			NodePath(":global_rotation"), 
-			SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
-		)
+func _enter_tree() -> void:
+	set_multiplayer_authority(int(name))
 
 func _ready() -> void:
-	await get_tree().process_frame
-	
-	if multiplayer.is_server():
-		# Хост: полная физика
-		freeze = false
-		sleeping = false
-		contact_monitor = true
-		max_contacts_reported = 10
-		linear_damp = 0.5
-		angular_damp = 0.5
-	else:
-		# Клиент: отключаем физику
-		freeze = true
-		sleeping = true
-		collision_layer = 0
-		collision_mask = 0
+	if not is_multiplayer_authority():
+		set_process(false)
+		set_physics_process(false)
+		return
+	aim_line.visible = false
 
-	setup_replication_config()
-	_apply_color()
-
-func _apply_color() -> void:
-	var mesh := $MeshInstance3D as MeshInstance3D
-	if mesh:
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = ball_color
-		mesh.set_surface_override_material(0, mat)
+func _process(_delta: float) -> void:
+	if aim_line.visible:
+		var mouse_pos := get_viewport().get_mouse_position()
+		var ball_screen_pos = get_parent_node_3d().get_parent().camera.unproject_position(global_position)
+		aim_line.clear_points()
+		aim_line.add_point(ball_screen_pos)
+		var drag_vector := aim_start - mouse_pos
+		var clamped_drag_length = mini(drag_vector.length(), MAX_DRAG)
+		var clamped_drag = drag_vector.normalized() * clamped_drag_length
+		var end_pos = ball_screen_pos + Vector2(-clamped_drag.x * 0.3, -clamped_drag.y * 0.3)
+		aim_line.add_point(end_pos)
+		var power := mini(int((drag_vector.length() / MAX_DRAG) * 100), 100)
 
 func _physics_process(_delta: float) -> void:
-	if not multiplayer.is_server():
+	if not is_multiplayer_authority():
 		return
-
 	if linear_velocity.length() < 0.1 and linear_velocity != Vector3.ZERO:
 		linear_velocity = Vector3.ZERO
-
-func do_spawn(pos: Vector3) -> void:
-	global_position = pos
 
 func apply_stroke(power: float, direction: Vector3) -> void:
 	apply_impulse(direction * power)
@@ -96,22 +59,31 @@ func do_reset(pos: Vector3) -> void:
 	stroke_count = 0
 	stroke_added.emit(stroke_count)
 
-func _input(event):
-	if Input.is_key_pressed(KEY_F1):
-		debug_sync_state()
+func _get_random_spawn_position() -> Vector3:
+	var x := randf_range(0, 9.0)
+	var z := randf_range(0, 9.0)
+	return Vector3(x, 1, z)
 
-func debug_sync_state():
-	var sync = $MultiplayerSynchronizer
-	print("=== Sync Debug for ", name, " ===")
-	print("Multiplayer authority: ", get_multiplayer_authority())
-	print("Is multiplayer authority: ", is_multiplayer_authority())
-	print("My peer ID: ", multiplayer.get_unique_id())
-	print("Replication interval: ", sync.replication_interval)
-	print("Visible to peers: ", sync.get_visibility_for(1))
-	print("Properties synced: ", sync.replication_config.get_properties())
-	print("Global position: ", global_position)
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
+		do_reset(_get_random_spawn_position())
+		
+	#if my_ball.linear_velocity.length() > 0.1:
+		#return
+	#
+	#if scored_players.has(peer_id):
+		#return
 
-	if multiplayer.is_server():
-		print("SENDING state to clients")
-	else:
-		print("RECEIVING state from host")
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				aim_start = event.position
+				aim_line.visible = true
+			elif aim_line.visible:
+				aim_line.visible = false
+				var drag_vector = aim_start - event.position
+				if drag_vector.length() > 10:
+					var drag_length = mini(drag_vector.length(), MAX_DRAG)
+					var power = (drag_length / MAX_DRAG) * MAX_POWER
+					var direction := Vector3(-drag_vector.x, 0, -drag_vector.y).normalized()
+					apply_stroke(power, direction)
