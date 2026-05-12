@@ -19,7 +19,7 @@ jobs:
       - name: Build Windows executable
         run: |
           mkdir -p build
-          godot --headless --export-release "Windows Desktop" build/game.exe
+          godot --headless --export-release "Windows Desktop" build/vibe-golf.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
