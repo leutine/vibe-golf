@@ -14,13 +14,19 @@ const BALL: PackedScene = preload("uid://ball001")
 @onready var camera: Camera3D = $Camera3D
 
 @onready var stroke_label: Label = $StrokeLabel
+@onready var goal_label: Label = $GoalLabel
 @onready var course: Node3D = $Course
 @onready var spawner: MultiplayerSpawner = $MultiplayerSpawner
 
 var players: Dictionary = {}
 var scored_players: Array = []
+var strokes := 0:
+	set(value):
+		strokes = value
+		stroke_label.text = "Strokes: %d" % strokes
 
 func _ready() -> void:
+	goal_label.visible = false
 	Engine.max_fps = 60
 
 	spawner.spawn_function = custom_spawn_ball
@@ -32,8 +38,8 @@ func _ready() -> void:
 		spawner.spawn(multiplayer.get_unique_id())
 
 func get_random_spawn_position() -> Vector3:
-	var x := randf_range(0, 9.0)
-	var z := randf_range(0, 9.0)
+	var x := randf_range(0.1, 9.0)
+	var z := randf_range(0.1, 9.0)
 	return Vector3(x, 1, z)
 
 func custom_spawn_ball(id: int) -> Ball:
@@ -43,6 +49,8 @@ func custom_spawn_ball(id: int) -> Ball:
 	ball.name = str(id)
 	ball.color = color
 	ball.position = pos
+	ball.stroke_added.connect(on_stroke_added)
+	ball.ball_reset.connect(on_ball_reset)
 
 	players[id] = {
 		"ball": ball,
@@ -62,8 +70,11 @@ func on_peer_disconnected(id: int) -> void:
 		players[id].ball.queue_free()
 		players.erase(id)
 
-func on_stroke_added(count: int) -> void:
-	stroke_label.text = "Strokes: %d" % count
+func on_stroke_added():
+	strokes += 1
+
+func on_ball_reset():
+	strokes = 0
 
 func on_ball_entered_hole(ball: Ball) -> void:
 	var scorer_id := -1
@@ -75,15 +86,25 @@ func on_ball_entered_hole(ball: Ball) -> void:
 	if scorer_id == -1:
 		return
 
-	if not scored_players.has(scorer_id):
-		scored_players.append(scorer_id)
-		stroke_label.text = "Player %d scored!" % scorer_id
-		tween_label(stroke_label)
+	#if not scored_players.has(scorer_id):
+		#scored_players.append(scorer_id)
+		#goal_label.text = "Player %d scored!" % scorer_id
+		#tween_label(goal_label, ball.color)
+	goal_label.text = "Player %d scored!" % scorer_id
+	tween_label(goal_label, ball.color)
 
-func tween_label(label):
-	var tw = create_tween().bind_node(label)
-	tw.set_parallel()
-	tw.set_trans(Tween.TRANS_ELASTIC)
-	tw.set_ease(Tween.EASE_IN_OUT)
-	tw.tween_property(label, "rotation", 2 * PI, 1)
-	tw.tween_property(label, "theme_override_font_sizes/font_size", 50, 1)
+func tween_label(label: Label, color: Color):
+	var font_size = 16
+	var duration = 1
+	var tw = label.create_tween()
+
+	tw.tween_property(label, "visible", true, 0)
+	tw.parallel().tween_property(label, "rotation", 2 * PI, duration).set_trans(Tween.TRANS_EXPO)
+	tw.parallel().tween_property(label.label_settings, "font_size", font_size * 5, duration)
+	tw.tween_property(label, "modulate", color, 0.5)
+	tw.tween_property(label, "rotation", 0, duration)
+	tw.parallel().tween_property(label.label_settings, "font_size", font_size * 0.5, duration)
+	tw.tween_property(label, "visible", false, 0)
+
+	label.label_settings.font_size = font_size
+	label.modulate = Color.WHITE

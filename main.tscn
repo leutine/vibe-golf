@@ -3,6 +3,11 @@
 [ext_resource type="PackedScene" uid="uid://c0urse001" path="res://course/course.tscn" id="2_course"]
 [ext_resource type="Script" uid="uid://bww8vbbj3yatx" path="res://main.gd" id="3_main_script"]
 
+[sub_resource type="LabelSettings" id="LabelSettings_0xm2m"]
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_h2yge"]
+
 [node name="Main" type="Node3D" unique_id=290463964]
 script = ExtResource("3_main_script")
 
@@ -33,4 +38,24 @@ offset_bottom = 60.0
 grow_horizontal = 0
 theme_override_font_sizes/font_size = 24
 text = "Strokes: 0"
+label_settings = SubResource("LabelSettings_0xm2m")
 horizontal_alignment = 2
+
+[node name="GoalLabel" type="Label" parent="." unique_id=1270020800]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -115.0
+offset_top = -22.75
+offset_right = 115.0
+offset_bottom = 22.75
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset_ratio = Vector2(0.5, 0.5)
+size_flags_horizontal = 4
+text = "kek"
+label_settings = SubResource("LabelSettings_h2yge")
+horizontal_alignment = 1
+vertical_alignment = 1
