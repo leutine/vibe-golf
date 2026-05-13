@@ -2,7 +2,8 @@ extends Control
 
 const DEFAULT_PORT := 4567
 const MAX_PLAYERS := 5
-const PLAYER = preload("res://ball/ball.tscn")
+const BALL = preload("uid://ball001")
+const MAIN_SCENE_PATH = "uid://bja62h36dhan5"
 
 @onready var ip_input: LineEdit = $VBox/IPInput
 @onready var status_label: Label = $VBox/StatusLabel
@@ -39,12 +40,12 @@ func _on_join_pressed() -> void:
 
 func on_connected_to_server():
 	add_player(multiplayer.get_unique_id())
-	get_tree().change_scene_to_file("res://main.tscn")
+	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 func add_player(peer_id: int):
 	#if peer_id == 1:
 		#return
-	#var new_player = PLAYER.instantiate()
+	#var new_player = BALL.instantiate()
 	#new_player.name = str(peer_id)
 	#var rand_x = randf_range(-5.0, 5.0)
 	#var rand_z = randf_range(-5.0, 5.0)

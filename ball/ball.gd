@@ -12,9 +12,9 @@ var material = StandardMaterial3D.new()
 
 @onready var aim_line: Line2D = $AimLine
 
-@export var ball_color := Color.BLACK:
+@export var color := Color.BLACK:
 	set(new_color):
-		ball_color = new_color
+		color = new_color
 		material.albedo_color = new_color
 		$MeshInstance3D.material_override = material
 
@@ -25,6 +25,7 @@ func _ready() -> void:
 	if not is_multiplayer_authority():
 		set_process(false)
 		set_physics_process(false)
+		set_process_input(false)
 		return
 	aim_line.visible = false
 
@@ -54,6 +55,7 @@ func apply_stroke(power: float, direction: Vector3) -> void:
 
 func do_reset(pos: Vector3) -> void:
 	global_position = pos
+	print_debug(global_position)
 	linear_velocity = Vector3.ZERO
 	angular_velocity = Vector3.ZERO
 	stroke_count = 0
