@@ -1,0 +1,4 @@
+- [ ] fix aim line
+  - aim from behind
+  - green line - weak hit, red line - powerful hit
+- [ ] expand base course
