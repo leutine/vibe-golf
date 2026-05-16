@@ -11,6 +11,7 @@ const PLAYER_COLORS := [
 const BALL: PackedScene = preload("uid://ball001")
 
 const CAMERA_OFFSET := Vector3(0, 12, 10)
+const FOLLOW_CAM_OFFSET := Vector3(0, 1.5, 5)
 const DEAD_ZONE := 3.0
 const CAMERA_LERP_SPEED := 5.0
 
@@ -30,9 +31,12 @@ var strokes := 0:
 var levels: Array[PackedScene] = []
 var current_level_index := -1
 var camera_focus := Vector3(5, 0, 5)
+var follow_camera := false
+var camera_basis: Basis
 
 func _ready() -> void:
 	goal_label.visible = false
+	camera_basis = camera.global_transform.basis
 
 	load_levels()
 	spawner.spawn_function = custom_spawn_ball
@@ -47,15 +51,24 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var my_id := multiplayer.get_unique_id()
-	if players.has(my_id):
-		var ball_pos = players[my_id].ball.global_position
-		var diff = ball_pos - camera_focus
-		var flat_dist := Vector2(diff.x, diff.z).length()
-		if flat_dist > DEAD_ZONE:
-			var target_focus = camera_focus + diff * (1.0 - DEAD_ZONE / flat_dist)
-			camera_focus = camera_focus.lerp(target_focus, minf(CAMERA_LERP_SPEED * delta, 1.0))
+	if not players.has(my_id):
+		return
+	var ball = players[my_id].ball
+	var ball_pos = ball.global_position
+
+	if follow_camera:
+		camera.global_position = ball_pos + FOLLOW_CAM_OFFSET
+		camera.look_at(ball_pos)
+		return
+
+	var diff = ball_pos - camera_focus
+	var flat_dist := Vector2(diff.x, diff.z).length()
+	if flat_dist > DEAD_ZONE:
+		var target_focus = camera_focus + diff * (1.0 - DEAD_ZONE / flat_dist)
+		camera_focus = camera_focus.lerp(target_focus, minf(CAMERA_LERP_SPEED * delta, 1.0))
 
 	camera.global_position = camera_focus + CAMERA_OFFSET
+	camera.global_transform.basis = camera_basis
 
 func load_levels():
 	var dir = DirAccess.open("res://levels/")
@@ -70,10 +83,18 @@ func load_levels():
 	levels.sort_custom(func(a, b): return a.resource_path < b.resource_path)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not multiplayer.is_server():
-		return
 	if event is InputEventKey and event.pressed:
 		var key = event.keycode
+		match key:
+			KEY_C:
+				follow_camera = not follow_camera
+				if not follow_camera:
+					var my_id := multiplayer.get_unique_id()
+					if players.has(my_id):
+						camera_focus = players[my_id].ball.global_position
+						camera_focus.y = 0
+		if not multiplayer.is_server():
+			return
 		if key >= KEY_1 and key <= KEY_9:
 			switch_level.rpc(key - KEY_1)
 
@@ -128,7 +149,6 @@ func on_peer_connected(id: int) -> void:
 	print("Peer connected: ", id)
 	spawner.spawn(id)
 	switch_level.rpc_id(id, current_level_index)
-	print(players)
 
 func on_peer_disconnected(id: int) -> void:
 	print("Peer disconnected: ", id)
