@@ -2,7 +2,7 @@ extends RigidBody3D
 class_name Ball
 
 signal stroke_added
-signal ball_reset
+signal ball_reset(ball: Ball)
 
 const MAX_DRAG_PX := 300.0
 const MAX_POWER := 20.0
@@ -45,8 +45,8 @@ func _input(event: InputEvent) -> void:
 			var dist = drag_screen.length()
 			if dist >= 1.0:
 				var power_ratio = clampf(dist / MAX_DRAG_PX, 0.0, 1.0)
-				var basis = camera.global_transform.basis
-				var world_dir = drag_screen.x * basis.x - drag_screen.y * basis.y
+				var camera_basis = camera.global_transform.basis
+				var world_dir = drag_screen.x * camera_basis.x - drag_screen.y * camera_basis.y
 				world_dir.y = 0.0
 				apply_stroke(power_ratio * MAX_POWER, world_dir.normalized())
 
@@ -65,10 +65,9 @@ func _process(_delta: float) -> void:
 		var drag_screen = ball_screen - mouse_pos
 		var dist = drag_screen.length()
 		var power_ratio = clampf(dist / MAX_DRAG_PX, 0.0, 1.0)
-		var basis = camera.global_transform.basis
-		var world_dir = drag_screen.x * basis.x - drag_screen.y * basis.y
+		var camera_basis = camera.global_transform.basis
+		var world_dir = drag_screen.x * camera_basis.x - drag_screen.y * camera_basis.y
 		world_dir.y = 0.0
-		var direction = world_dir.normalized()
 
 		var aim_len = 50.0 + power_ratio * 150.0
 		var end_pos = ball_screen + drag_screen.normalized() * aim_len
@@ -85,7 +84,7 @@ func apply_stroke(power: float, direction: Vector3) -> void:
 func do_reset(pos: Vector3) -> void:
 	pending_reset = true
 	pending_reset_pos = pos
-	ball_reset.emit()
+	ball_reset.emit(self)
 
 func get_random_spawn_position() -> Vector3:
 	var x := randf_range(0.1, 9.0)

@@ -139,8 +139,11 @@ func on_peer_disconnected(id: int) -> void:
 func on_stroke_added():
 	strokes += 1
 
-func on_ball_reset():
+func on_ball_reset(ball: Ball):
 	strokes = 0
+	if int(ball.name) == multiplayer.get_unique_id():
+		camera_focus = ball.global_position
+		camera_focus.y = 0
 
 func on_ball_entered_hole(ball: Ball) -> void:
 	var scorer_id := -1
