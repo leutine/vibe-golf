@@ -27,7 +27,6 @@ var strokes := 0:
 
 func _ready() -> void:
 	goal_label.visible = false
-	Engine.max_fps = 60
 
 	spawner.spawn_function = custom_spawn_ball
 	course.ball_entered_hole.connect(on_ball_entered_hole)

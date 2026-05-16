@@ -8,33 +8,35 @@ const MAIN_SCENE_PATH = "uid://bja62h36dhan5"
 @onready var ip_input: LineEdit = $VBox/IPInput
 @onready var status_label: Label = $VBox/StatusLabel
 
-var enet_peer := ENetMultiplayerPeer.new()
+var peer := ENetMultiplayerPeer.new()
+
+func _ready():
+	Engine.max_fps = 60
+
+	multiplayer.peer_connected.connect(add_player)
+	multiplayer.peer_disconnected.connect(remove_player)
 
 func _on_host_pressed() -> void:
-	var err := enet_peer.create_server(DEFAULT_PORT, MAX_PLAYERS)
+	var err := peer.create_server(DEFAULT_PORT, MAX_PLAYERS)
 	if err != OK:
 		print("Failed to host: %s" % err)
 		return
 
-	multiplayer.multiplayer_peer = enet_peer
-	multiplayer.peer_connected.connect(add_player)
-	multiplayer.peer_disconnected.connect(remove_player)
+	multiplayer.multiplayer_peer = peer
 	print("Hosting on port %d..." % DEFAULT_PORT)
-	get_tree().change_scene_to_file("res://main.tscn")
+	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 func _on_join_pressed() -> void:
 	var ip := ip_input.text.strip_edges()
 	if ip.is_empty():
 		ip = "localhost"
 	
-	var err := enet_peer.create_client(ip, DEFAULT_PORT)
+	var err := peer.create_client(ip, DEFAULT_PORT)
 	if err != OK:
 		print("Failed to connect: %s" % err)
 		return
 	
-	multiplayer.multiplayer_peer = enet_peer
-	multiplayer.peer_connected.connect(add_player) 
-	multiplayer.peer_disconnected.connect(remove_player)
+	multiplayer.multiplayer_peer = peer
 	multiplayer.connected_to_server.connect(on_connected_to_server)
 	print("Connecting to %s..." % ip)
 
@@ -43,6 +45,7 @@ func on_connected_to_server():
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 func add_player(peer_id: int):
+	pass
 	#if peer_id == 1:
 		#return
 	#var new_player = BALL.instantiate()
@@ -50,7 +53,6 @@ func add_player(peer_id: int):
 	#var rand_x = randf_range(-5.0, 5.0)
 	#var rand_z = randf_range(-5.0, 5.0)
 	#new_player.position = Vector3(rand_x, 1.0, rand_z)
-	pass
 
 func remove_player(peer_id):
 	pass
