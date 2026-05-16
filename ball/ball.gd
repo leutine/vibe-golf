@@ -4,16 +4,16 @@ class_name Ball
 signal stroke_added
 signal ball_reset
 
-const MAX_DRAG := 250.0
+const MAX_DRAG_PX := 300.0
 const MAX_POWER := 20.0
 
-var aim_start := Vector2.ZERO
 var stroke_count := 0
 var material = StandardMaterial3D.new()
 var pending_reset = false
 var pending_reset_pos = Vector3.ZERO
 
 @onready var aim_line: Line2D = $AimLine
+@onready var camera: Camera3D = get_viewport().get_camera_3d()
 
 @export var color := Color.BLACK:
 	set(new_color):
@@ -35,19 +35,20 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
 		do_reset(get_random_spawn_position())
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				aim_start = event.position
-				aim_line.visible = true
-			elif aim_line.visible:
-				aim_line.visible = false
-				var drag_vector = aim_start - event.position
-				if drag_vector.length() > 10:
-					var drag_length = mini(drag_vector.length(), MAX_DRAG)
-					var power = (drag_length / MAX_DRAG) * MAX_POWER
-					var direction := Vector3(drag_vector.x, 0, drag_vector.y).normalized()
-					apply_stroke(power, direction)
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			aim_line.visible = true
+		elif aim_line.visible:
+			aim_line.visible = false
+			var ball_screen = camera.unproject_position(global_position)
+			var drag_screen = ball_screen - event.position
+			var dist = drag_screen.length()
+			if dist >= 1.0:
+				var power_ratio = clampf(dist / MAX_DRAG_PX, 0.0, 1.0)
+				var basis = camera.global_transform.basis
+				var world_dir = drag_screen.x * basis.x - drag_screen.y * basis.y
+				world_dir.y = 0.0
+				apply_stroke(power_ratio * MAX_POWER, world_dir.normalized())
 
 func _physics_process(_delta: float) -> void:
 	if pending_reset:
@@ -60,15 +61,21 @@ func _physics_process(_delta: float) -> void:
 func _process(_delta: float) -> void:
 	if aim_line.visible:
 		var mouse_pos := get_viewport().get_mouse_position()
-		var ball_screen_pos = get_viewport().get_camera_3d().unproject_position(global_position)
+		var ball_screen = camera.unproject_position(global_position)
+		var drag_screen = ball_screen - mouse_pos
+		var dist = drag_screen.length()
+		var power_ratio = clampf(dist / MAX_DRAG_PX, 0.0, 1.0)
+		var basis = camera.global_transform.basis
+		var world_dir = drag_screen.x * basis.x - drag_screen.y * basis.y
+		world_dir.y = 0.0
+		var direction = world_dir.normalized()
+
+		var aim_len = 50.0 + power_ratio * 150.0
+		var end_pos = ball_screen + drag_screen.normalized() * aim_len
+
 		aim_line.clear_points()
-		aim_line.add_point(ball_screen_pos)
-		var drag_vector := aim_start - mouse_pos
-		var clamped_drag_length = mini(drag_vector.length(), MAX_DRAG)
-		var clamped_drag = drag_vector.normalized() * clamped_drag_length
-		var end_pos = ball_screen_pos + Vector2(clamped_drag.x * 0.3, clamped_drag.y * 0.3)
+		aim_line.add_point(ball_screen)
 		aim_line.add_point(end_pos)
-		var power_ratio = clampf(drag_vector.length() / MAX_DRAG, 0.0, 1.0)
 		aim_line.default_color = Color(power_ratio, 1.0 - power_ratio, 0)
 
 func apply_stroke(power: float, direction: Vector3) -> void:
