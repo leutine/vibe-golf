@@ -127,6 +127,7 @@ func _on_ball_spawned(node: Node) -> void:
 func on_peer_connected(id: int) -> void:
 	print("Peer connected: ", id)
 	spawner.spawn(id)
+	switch_level.rpc_id(id, current_level_index)
 	print(players)
 
 func on_peer_disconnected(id: int) -> void:
