@@ -27,6 +27,7 @@ func _ready() -> void:
 
 	spawner.spawn_function = custom_spawn_ball
 	course.ball_entered_hole.connect(on_ball_entered_hole)
+	$Balls.child_entered_tree.connect(_on_ball_spawned)
 	
 	if multiplayer.is_server():
 		multiplayer.peer_connected.connect(on_peer_connected)
@@ -45,15 +46,19 @@ func custom_spawn_ball(id: int) -> Ball:
 	ball.name = str(id)
 	ball.color = color
 	ball.position = pos
+	return ball
+
+func _on_ball_spawned(node: Node) -> void:
+	if not (node is Ball):
+		return
+	var ball := node as Ball
 	ball.stroke_added.connect(on_stroke_added)
 	ball.ball_reset.connect(on_ball_reset)
-
-	players[id] = {
+	players[int(ball.name)] = {
 		"ball": ball,
-		"position": pos,
-		"color": color
+		"position": ball.position,
+		"color": ball.color
 	}
-	return ball
 
 func on_peer_connected(id: int) -> void:
 	print("Peer connected: ", id)
