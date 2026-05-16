@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://bja62h36dhan5"]
 
-[ext_resource type="PackedScene" uid="uid://c0urse001" path="res://course/course.tscn" id="2_course"]
 [ext_resource type="Script" uid="uid://bww8vbbj3yatx" path="res://main.gd" id="3_main_script"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_0xm2m"]
@@ -11,7 +10,7 @@ font_size = 32
 [node name="Main" type="Node3D" unique_id=290463964]
 script = ExtResource("3_main_script")
 
-[node name="Course" parent="." unique_id=1415473244 instance=ExtResource("2_course")]
+[node name="Course" type="Node3D" parent="." unique_id=1704501349]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1513108204]
 _spawnable_scenes = PackedStringArray("uid://ball001")

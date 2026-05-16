@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://c0urse001"]
+[gd_scene format=3 uid="uid://b6rxh5pthj0yo"]
 
-[ext_resource type="Script" uid="uid://bastq6gq7n3hp" path="res://course/course.gd" id="1_course_script"]
+[ext_resource type="Script" uid="uid://bastq6gq7n3hp" path="res://scripts/level.gd" id="1_nnn84"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t4dcb"]
 albedo_color = Color(0.2901961, 0.77254903, 0.3647059, 1)
@@ -12,17 +12,17 @@ radius = 0.7
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_167gu"]
 albedo_color = Color(0.54901963, 0.43529412, 0.32941177, 1)
 
-[node name="Course" type="Node3D" unique_id=783720266]
-script = ExtResource("1_course_script")
+[node name="Level02" type="Node3D" unique_id=783720266]
+script = ExtResource("1_nnn84")
 
 [node name="Floor" type="CSGBox3D" parent="." unique_id=1475871858]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, -0.25, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, -0.25, 5)
 use_collision = true
-size = Vector3(10, 0.5, 10)
+size = Vector3(24, 0.5, 10)
 material = SubResource("StandardMaterial3D_t4dcb")
 
 [node name="Hole" type="CSGCylinder3D" parent="Floor" unique_id=349645297]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.9499996, -0.29999995, 1.1920929e-07)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.950001, -0.29999995, -3)
 operation = 2
 radius = 0.7
 
@@ -32,26 +32,26 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.70000005, 0)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/Hole/HoleArea" unique_id=1483020575]
 shape = SubResource("CylinderShape3D_hole")
 
-[node name="WallWest" type="CSGBox3D" parent="Floor" unique_id=613314570]
-transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, -5, 0.5, 0)
+[node name="WallWest" type="CSGBox3D" parent="." unique_id=613314570]
+transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 0, 0.25, 5)
 use_collision = true
 size = Vector3(10, 2, 0.2)
 material = SubResource("StandardMaterial3D_167gu")
 
-[node name="WallEast" type="CSGBox3D" parent="Floor" unique_id=904634071]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 5, 0.5, 0)
+[node name="WallEast" type="CSGBox3D" parent="." unique_id=904634071]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 24, 0.25, 5)
 use_collision = true
 size = Vector3(10, 2, 0.2)
 material = SubResource("StandardMaterial3D_167gu")
 
-[node name="WallNorth" type="CSGBox3D" parent="Floor" unique_id=964368510]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -5)
+[node name="WallNorth" type="CSGBox3D" parent="." unique_id=964368510]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.25, 0)
 use_collision = true
-size = Vector3(10, 2, 0.2)
+size = Vector3(24, 2, 0.2)
 material = SubResource("StandardMaterial3D_167gu")
 
-[node name="WallSouth" type="CSGBox3D" parent="Floor" unique_id=798804840]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 5)
+[node name="WallSouth" type="CSGBox3D" parent="." unique_id=798804840]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.25, 10)
 use_collision = true
-size = Vector3(10, 2, 0.2)
+size = Vector3(24, 2, 0.2)
 material = SubResource("StandardMaterial3D_167gu")
