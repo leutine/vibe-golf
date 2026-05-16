@@ -10,9 +10,6 @@ const PLAYER_COLORS := [
 
 const BALL: PackedScene = preload("uid://ball001")
 
-# TODO: не убирать, используется внутри ball.gd
-@onready var camera: Camera3D = $Camera3D
-
 @onready var stroke_label: Label = $StrokeLabel
 @onready var goal_label: Label = $GoalLabel
 @onready var course: Node3D = $Course

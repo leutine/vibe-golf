@@ -46,7 +46,7 @@ func _input(event: InputEvent) -> void:
 				if drag_vector.length() > 10:
 					var drag_length = mini(drag_vector.length(), MAX_DRAG)
 					var power = (drag_length / MAX_DRAG) * MAX_POWER
-					var direction := Vector3(-drag_vector.x, 0, -drag_vector.y).normalized()
+					var direction := Vector3(drag_vector.x, 0, drag_vector.y).normalized()
 					apply_stroke(power, direction)
 
 func _physics_process(_delta: float) -> void:
@@ -60,15 +60,16 @@ func _physics_process(_delta: float) -> void:
 func _process(_delta: float) -> void:
 	if aim_line.visible:
 		var mouse_pos := get_viewport().get_mouse_position()
-		var ball_screen_pos = get_parent_node_3d().get_parent().camera.unproject_position(global_position)
+		var ball_screen_pos = get_viewport().get_camera_3d().unproject_position(global_position)
 		aim_line.clear_points()
 		aim_line.add_point(ball_screen_pos)
 		var drag_vector := aim_start - mouse_pos
 		var clamped_drag_length = mini(drag_vector.length(), MAX_DRAG)
 		var clamped_drag = drag_vector.normalized() * clamped_drag_length
-		var end_pos = ball_screen_pos + Vector2(-clamped_drag.x * 0.3, -clamped_drag.y * 0.3)
+		var end_pos = ball_screen_pos + Vector2(clamped_drag.x * 0.3, clamped_drag.y * 0.3)
 		aim_line.add_point(end_pos)
-		var power := mini(int((drag_vector.length() / MAX_DRAG) * 100), 100)
+		var power_ratio = clampf(drag_vector.length() / MAX_DRAG, 0.0, 1.0)
+		aim_line.default_color = Color(power_ratio, 1.0 - power_ratio, 0)
 
 func apply_stroke(power: float, direction: Vector3) -> void:
 	apply_impulse(direction * power)
