@@ -1,4 +1,4 @@
-extends RigidBody3D
+extends Node3D
 class_name Ball
 
 signal stroke_added
@@ -12,6 +12,7 @@ var material = StandardMaterial3D.new()
 var pending_reset = false
 var pending_reset_pos = Vector3.ZERO
 
+@onready var rigid_body: RigidBody3D = $RigidBody
 @onready var aim_line: Line2D = $AimLine
 @onready var name_label: Label3D = $NameLabel
 @onready var camera: Camera3D = get_viewport().get_camera_3d()
@@ -20,7 +21,7 @@ var pending_reset_pos = Vector3.ZERO
 	set(value):
 		color = value
 		material.albedo_color = value
-		$MeshInstance3D.material_override = material
+		$RigidBody/MeshInstance3D.material_override = material
 
 @export var player_name := "Player":
 	set(value):
@@ -32,14 +33,14 @@ func _enter_tree() -> void:
 	set_multiplayer_authority(int(name))
 
 func _ready() -> void:
-	if not is_multiplayer_authority():
-		set_process(false)
+	if is_multiplayer_authority():
+		aim_line.visible = false
+		color = PlayerData.my_color
+		player_name = PlayerData.my_name
+	else:
 		set_physics_process(false)
 		set_process_input(false)
-		return
-	aim_line.visible = false
-	color = PlayerData.my_color
-	player_name = PlayerData.my_name
+
 	if multiplayer.get_unique_id() == int(name):
 		name_label.hide()
 
@@ -51,7 +52,7 @@ func _input(event: InputEvent) -> void:
 			aim_line.visible = true
 		elif aim_line.visible:
 			aim_line.visible = false
-			var ball_screen = camera.unproject_position(global_position)
+			var ball_screen = camera.unproject_position(rigid_body.global_position)
 			var drag_screen = ball_screen - event.position
 			var dist = drag_screen.length()
 			if dist >= 1.0:
@@ -62,34 +63,43 @@ func _input(event: InputEvent) -> void:
 				apply_stroke(power_ratio * MAX_POWER, world_dir.normalized())
 
 func _physics_process(_delta: float) -> void:
-	if pending_reset:
-		pending_reset = false
-		global_transform = Transform3D(Basis(), pending_reset_pos)
-		linear_velocity = Vector3.ZERO
-		angular_velocity = Vector3.ZERO
+	if not is_multiplayer_authority():
 		return
 
+	if pending_reset:
+		pending_reset = false
+		rigid_body.global_position = pending_reset_pos
+		rigid_body.linear_velocity = Vector3.ZERO
+		rigid_body.angular_velocity = Vector3.ZERO
+
 func _process(_delta: float) -> void:
-	if aim_line.visible:
-		var mouse_pos := get_viewport().get_mouse_position()
-		var ball_screen = camera.unproject_position(global_position)
-		var drag_screen = ball_screen - mouse_pos
-		var dist = drag_screen.length()
-		var power_ratio = clampf(dist / MAX_DRAG_PX, 0.0, 1.0)
-		var camera_basis = camera.global_transform.basis
-		var world_dir = drag_screen.x * camera_basis.x - drag_screen.y * camera_basis.y
-		world_dir.y = 0.0
+	if name_label.visible:
+		name_label.global_position = rigid_body.global_position + Vector3.UP * 0.5
 
-		var aim_len = 50.0 + power_ratio * 150.0
-		var end_pos = ball_screen + drag_screen.normalized() * aim_len
+	if not is_multiplayer_authority():
+		return
+	if not aim_line.visible:
+		return
 
-		aim_line.clear_points()
-		aim_line.add_point(ball_screen)
-		aim_line.add_point(end_pos)
-		aim_line.default_color = Color(power_ratio, 1.0 - power_ratio, 0)
+	var mouse_pos := get_viewport().get_mouse_position()
+	var ball_screen = camera.unproject_position(rigid_body.global_position)
+	var drag_screen = ball_screen - mouse_pos
+	var dist = drag_screen.length()
+	var power_ratio = clampf(dist / MAX_DRAG_PX, 0.0, 1.0)
+	var camera_basis = camera.global_transform.basis
+	var world_dir = drag_screen.x * camera_basis.x - drag_screen.y * camera_basis.y
+	world_dir.y = 0.0
+
+	var aim_len = 50.0 + power_ratio * 150.0
+	var end_pos = ball_screen + drag_screen.normalized() * aim_len
+
+	aim_line.clear_points()
+	aim_line.add_point(ball_screen)
+	aim_line.add_point(end_pos)
+	aim_line.default_color = Color(power_ratio, 1.0 - power_ratio, 0)
 
 func apply_stroke(power: float, direction: Vector3) -> void:
-	apply_impulse(direction * power)
+	rigid_body.apply_impulse(direction * power)
 	stroke_added.emit()
 
 func do_reset(pos: Vector3) -> void:

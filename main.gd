@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 	if not players.has(my_id):
 		return
 	var ball = players[my_id].ball
-	var ball_pos = ball.global_position
+	var ball_pos = ball.rigid_body.global_position
 
 	if follow_camera:
 		camera.global_position = ball_pos + FOLLOW_CAM_OFFSET
@@ -91,7 +91,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if not follow_camera:
 					var my_id := multiplayer.get_unique_id()
 					if players.has(my_id):
-						camera_focus = players[my_id].ball.global_position
+						camera_focus = players[my_id].ball.rigid_body.global_position
 						camera_focus.y = 0
 		if not multiplayer.is_server():
 			return
@@ -161,7 +161,7 @@ func on_stroke_added():
 func on_ball_reset(ball: Ball):
 	strokes = 0
 	if int(ball.name) == multiplayer.get_unique_id():
-		camera_focus = ball.global_position
+		camera_focus = ball.rigid_body.global_position
 		camera_focus.y = 0
 
 func on_ball_entered_hole(ball: Ball) -> void:

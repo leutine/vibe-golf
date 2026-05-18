@@ -1,6 +1,6 @@
 extends Node3D
 
-signal ball_entered_hole(ball: RigidBody3D)
+signal ball_entered_hole(ball: Ball)
 
 @onready var hole_area: Area3D = $Floor/Hole/HoleArea
 
@@ -9,4 +9,6 @@ func _ready() -> void:
 
 func _on_hole_body_entered(body: Node3D) -> void:
 	if body is RigidBody3D:
-		ball_entered_hole.emit(body)
+		var ball := body.get_parent() as Ball
+		if ball:
+			ball_entered_hole.emit(ball)
