@@ -13,13 +13,20 @@ var pending_reset = false
 var pending_reset_pos = Vector3.ZERO
 
 @onready var aim_line: Line2D = $AimLine
+@onready var name_label: Label3D = $NameLabel
 @onready var camera: Camera3D = get_viewport().get_camera_3d()
 
 @export var color := Color.BLACK:
-	set(new_color):
-		color = new_color
-		material.albedo_color = new_color
+	set(value):
+		color = value
+		material.albedo_color = value
 		$MeshInstance3D.material_override = material
+
+@export var player_name := "Player":
+	set(value):
+		player_name = value
+		if name_label:
+			name_label.text = value
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(int(name))
@@ -31,6 +38,10 @@ func _ready() -> void:
 		set_process_input(false)
 		return
 	aim_line.visible = false
+	color = PlayerData.my_color
+	player_name = PlayerData.my_name
+	if multiplayer.get_unique_id() == int(name):
+		name_label.hide()
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_R:

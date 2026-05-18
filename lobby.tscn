@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://lobby001"]
 
-[ext_resource type="Script" path="res://lobby.gd" id="1_lobby_script"]
+[ext_resource type="Script" uid="uid://dcnbypmv5jnq" path="res://lobby.gd" id="1_lobby_script"]
 
-[node name="Lobby" type="Control"]
+[node name="Lobby" type="Control" unique_id=1066632271]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,49 +11,67 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_lobby_script")
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1244807953]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -100.0
-offset_right = 150.0
-offset_bottom = 100.0
+offset_left = -143.0
+offset_top = -160.5
+offset_right = 143.0
+offset_bottom = 160.5
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Title" type="Label" parent="VBox"]
+[node name="Title" type="Label" parent="VBox" unique_id=647402116]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Vibe Golf"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 32
 
-[node name="HSeparator" type="HSeparator" parent="VBox"]
+[node name="HSeparator" type="HSeparator" parent="VBox" unique_id=689573304]
 layout_mode = 2
 
-[node name="HostButton" type="Button" parent="VBox"]
+[node name="NameLabel" type="Label" parent="VBox" unique_id=1036470268]
+layout_mode = 2
+text = "Your Name:"
+
+[node name="NameInput" type="LineEdit" parent="VBox" unique_id=1746013357]
+layout_mode = 2
+placeholder_text = "Enter your name"
+
+[node name="ColorLabel" type="Label" parent="VBox" unique_id=1800364853]
+layout_mode = 2
+text = "Your Color:"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="VBox" unique_id=504697200]
+layout_mode = 2
+text = "Pick color"
+color = Color(1, 0.2, 0.2, 1)
+edit_alpha = false
+
+[node name="HostButton" type="Button" parent="VBox" unique_id=1340847141]
 layout_mode = 2
 text = "Host Game"
 
-[node name="IPLabel" type="Label" parent="VBox"]
+[node name="IPLabel" type="Label" parent="VBox" unique_id=466220159]
 layout_mode = 2
 text = "Server IP:"
 
-[node name="IPInput" type="LineEdit" parent="VBox"]
+[node name="IPInput" type="LineEdit" parent="VBox" unique_id=468041559]
 layout_mode = 2
 placeholder_text = "localhost"
 
-[node name="JoinButton" type="Button" parent="VBox"]
+[node name="JoinButton" type="Button" parent="VBox" unique_id=990010242]
 layout_mode = 2
 text = "Join Game"
 
-[node name="HSeparator2" type="HSeparator" parent="VBox"]
+[node name="HSeparator2" type="HSeparator" parent="VBox" unique_id=76846334]
 layout_mode = 2
 
-[node name="StatusLabel" type="Label" parent="VBox"]
+[node name="StatusLabel" type="Label" parent="VBox" unique_id=496537015]
 layout_mode = 2
 text = "Waiting..."
 horizontal_alignment = 1

@@ -30,6 +30,10 @@ Players=""
 limits/web_socket_max_message_sizekb=4096
 limits/web_socket_max_frame_sizekb=256
 
+[autoload]
+
+PlayerData="*res://scripts/player_data.gd"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

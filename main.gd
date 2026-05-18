@@ -125,21 +125,20 @@ func get_random_spawn_position() -> Vector3:
 	return Vector3(x, 1, z)
 
 func custom_spawn_ball(id: int) -> Ball:
-	var pos = get_random_spawn_position()
-	var color = PLAYER_COLORS[(id - 1) % PLAYER_COLORS.size()]
 	var ball: Ball = BALL.instantiate()
 	ball.name = str(id)
-	ball.color = color
-	ball.position = pos
+	ball.position = get_random_spawn_position()
 	return ball
 
 func _on_ball_spawned(node: Node) -> void:
 	if not node is Ball:
 		return
 	var ball := node as Ball
+	var id = int(ball.name)
 	ball.stroke_added.connect(on_stroke_added)
 	ball.ball_reset.connect(on_ball_reset)
-	players[int(ball.name)] = {
+
+	players[id] = {
 		"ball": ball,
 		"position": ball.position,
 		"color": ball.color
@@ -166,16 +165,13 @@ func on_ball_reset(ball: Ball):
 		camera_focus.y = 0
 
 func on_ball_entered_hole(ball: Ball) -> void:
-	var scorer_id := -1
-	for id in players:
-		if players[id].ball == ball:
-			scorer_id = id
-			break
+	var player_data = players.get(int(ball.name), null)
+	var scorer_id = int(ball.name) if player_data else -1
 
 	if scorer_id == -1:
 		return
-
-	goal_label.text = "Player %d scored!" % scorer_id
+	
+	goal_label.text = "%s scored!" % ball.player_name
 	tween_label(goal_label, ball.color)
 
 func tween_label(label: Label, color: Color):

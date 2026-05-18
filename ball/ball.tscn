@@ -26,6 +26,9 @@ properties/2/replication_mode = 2
 properties/3/path = NodePath(".:global_position")
 properties/3/spawn = true
 properties/3/replication_mode = 2
+properties/4/path = NodePath(".:player_name")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [node name="Ball" type="RigidBody3D" unique_id=1720130869 groups=["Players"]]
 physics_material_override = SubResource("PhysicsMaterial_6plaf")
@@ -47,3 +50,9 @@ replication_config = SubResource("SceneReplicationConfig_6plaf")
 points = PackedVector2Array(0, 0, 100, 0)
 width = 3.0
 default_color = Color(1, 1, 0, 1)
+
+[node name="NameLabel" type="Label3D" parent="." unique_id=2109704320]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50271285, 0)
+billboard = 1
+no_depth_test = true
+text = "Name"
