@@ -15,11 +15,15 @@ run/main_scene="res://lobby.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+PlayerData="*res://scripts/player_data.gd"
+
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/stretch/mode="canvas_items"
+window/stretch/mode="viewport"
 
 [global_group]
 
@@ -29,10 +33,6 @@ Players=""
 
 limits/web_socket_max_message_sizekb=4096
 limits/web_socket_max_frame_sizekb=256
-
-[autoload]
-
-PlayerData="*res://scripts/player_data.gd"
 
 [physics]
 

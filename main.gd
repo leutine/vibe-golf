@@ -1,28 +1,13 @@
 extends Node3D
 
-const PLAYER_COLORS := [
-	Color(1, 0.2, 0.2),
-	Color(0.2, 0.4, 1),
-	Color(0.2, 0.8, 0.2),
-	Color(1, 0.8, 0.2),
-	Color(0.8, 0.2, 1)
-]
-
 const BALL: PackedScene = preload("uid://ball001")
-
-const CAMERA_OFFSET := Vector3(0, 12, 10)
-const FOLLOW_CAM_OFFSET := Vector3(0, 1.5, 5)
-const DEAD_ZONE := 3.0
-const CAMERA_LERP_SPEED := 5.0
 
 @onready var stroke_label: Label = $StrokeLabel
 @onready var goal_label: Label = $GoalLabel
 @onready var course: Node3D = $Course
 @onready var spawner: MultiplayerSpawner = $MultiplayerSpawner
-@onready var camera: Camera3D = $Camera3D
 
 var players: Dictionary = {}
-var scored_players: Array = []
 var strokes := 0:
 	set(value):
 		strokes = value
@@ -30,13 +15,9 @@ var strokes := 0:
 
 var levels: Array[PackedScene] = []
 var current_level_index := -1
-var camera_focus := Vector3(5, 0, 5)
-var follow_camera := false
-var camera_basis: Basis
 
 func _ready() -> void:
 	goal_label.visible = false
-	camera_basis = camera.global_transform.basis
 
 	load_levels()
 	spawner.spawn_function = custom_spawn_ball
@@ -48,27 +29,6 @@ func _ready() -> void:
 		multiplayer.peer_connected.connect(on_peer_connected)
 		multiplayer.peer_disconnected.connect(on_peer_disconnected)
 		spawner.spawn(multiplayer.get_unique_id())
-
-func _process(delta: float) -> void:
-	var my_id := multiplayer.get_unique_id()
-	if not players.has(my_id):
-		return
-	var ball = players[my_id].ball
-	var ball_pos = ball.rigid_body.global_position
-
-	if follow_camera:
-		camera.global_position = ball_pos + FOLLOW_CAM_OFFSET
-		camera.look_at(ball_pos)
-		return
-
-	var diff = ball_pos - camera_focus
-	var flat_dist := Vector2(diff.x, diff.z).length()
-	if flat_dist > DEAD_ZONE:
-		var target_focus = camera_focus + diff * (1.0 - DEAD_ZONE / flat_dist)
-		camera_focus = camera_focus.lerp(target_focus, minf(CAMERA_LERP_SPEED * delta, 1.0))
-
-	camera.global_position = camera_focus + CAMERA_OFFSET
-	camera.global_transform.basis = camera_basis
 
 func load_levels():
 	var dir = DirAccess.open("res://levels/")
@@ -85,14 +45,6 @@ func load_levels():
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		var key = event.keycode
-		match key:
-			KEY_C:
-				follow_camera = not follow_camera
-				if not follow_camera:
-					var my_id := multiplayer.get_unique_id()
-					if players.has(my_id):
-						camera_focus = players[my_id].ball.rigid_body.global_position
-						camera_focus.y = 0
 		if not multiplayer.is_server():
 			return
 		if key >= KEY_1 and key <= KEY_9:
@@ -106,7 +58,6 @@ func switch_level(level_index: int):
 		return
 
 	current_level_index = level_index
-	camera_focus = Vector3(5, 0, 5)
 
 	for child in course.get_children():
 		child.queue_free()
@@ -144,6 +95,9 @@ func _on_ball_spawned(node: Node) -> void:
 		"color": ball.color
 	}
 
+	if id == multiplayer.get_unique_id():
+		$CameraController.set_target(ball)
+
 func on_peer_connected(id: int) -> void:
 	print("Peer connected: ", id)
 	spawner.spawn(id)
@@ -160,9 +114,6 @@ func on_stroke_added():
 
 func on_ball_reset(ball: Ball):
 	strokes = 0
-	if int(ball.name) == multiplayer.get_unique_id():
-		camera_focus = ball.rigid_body.global_position
-		camera_focus.y = 0
 
 func on_ball_entered_hole(ball: Ball) -> void:
 	var player_data = players.get(int(ball.name), null)
@@ -170,7 +121,7 @@ func on_ball_entered_hole(ball: Ball) -> void:
 
 	if scorer_id == -1:
 		return
-	
+
 	goal_label.text = "%s scored!" % ball.player_name
 	tween_label(goal_label, ball.color)
 
