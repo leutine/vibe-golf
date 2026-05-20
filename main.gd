@@ -13,13 +13,15 @@ var strokes := 0:
 		strokes = value
 		stroke_label.text = "Strokes: %d" % strokes
 
-var levels: Array[PackedScene] = []
+var levels: Array[PackedScene] = [
+	preload("res://levels/level_01.tscn"),
+	preload("res://levels/level_02.tscn"),
+]
 var current_level_index := -1
 
 func _ready() -> void:
 	goal_label.visible = false
 
-	load_levels()
 	spawner.spawn_function = custom_spawn_ball
 	$Balls.child_entered_tree.connect(_on_ball_spawned)
 
@@ -29,18 +31,6 @@ func _ready() -> void:
 		multiplayer.peer_connected.connect(on_peer_connected)
 		multiplayer.peer_disconnected.connect(on_peer_disconnected)
 		spawner.spawn(multiplayer.get_unique_id())
-
-func load_levels():
-	var dir = DirAccess.open("res://levels/")
-	if not dir:
-		return
-	dir.list_dir_begin()
-	var file = dir.get_next()
-	while file != "":
-		if file.ends_with(".tscn") and file.begins_with("level_"):
-			levels.append(load("res://levels/" + file))
-		file = dir.get_next()
-	levels.sort_custom(func(a, b): return a.resource_path < b.resource_path)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
