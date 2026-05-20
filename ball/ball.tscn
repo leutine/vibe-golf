@@ -31,18 +31,9 @@ properties/4/spawn = true
 properties/4/replication_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_traj"]
-albedo_color = Color(1, 0.8, 0, 0)
-emission_enabled = true
-emission = Color(1, 0.8, 0, 0)
-
-[sub_resource type="SphereMesh" id="SphereMesh_traj"]
-radius = 0.08
-height = 0.16
-
-[sub_resource type="MultiMesh" id="MultiMesh_traj"]
-transform_format = 1
-instance_count = 30
-mesh = SubResource("SphereMesh_traj")
+vertex_color_use_as_albedo = true
+transparency = 1
+no_depth_test = true
 
 [node name="Ball" type="Node3D" unique_id=810565997 groups=["Players"]]
 script = ExtResource("1_ball_script")
@@ -62,11 +53,10 @@ mesh = SubResource("SphereMesh_1")
 replication_interval = 0.05
 replication_config = SubResource("SceneReplicationConfig_6plaf")
 
-[node name="TrajectoryPoints" type="MultiMeshInstance3D" parent="." unique_id=123139972]
+[node name="TrajectoryRibbon" type="MeshInstance3D" parent="." unique_id=123139972]
 visible = false
 material_override = SubResource("StandardMaterial3D_traj")
 cast_shadow = 0
-multimesh = SubResource("MultiMesh_traj")
 
 [node name="NameLabel" type="Label3D" parent="." unique_id=287670907]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50271285, 0)

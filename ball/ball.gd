@@ -26,7 +26,10 @@ var aim_direction := Vector3.FORWARD
 @onready var rigid_body: RigidBody3D = $RigidBody
 @onready var name_label: Label3D = $NameLabel
 @onready var camera: Camera3D = get_viewport().get_camera_3d()
-@onready var trajectory: MultiMeshInstance3D = $TrajectoryPoints
+@onready var trajectory_ribbon: MeshInstance3D = $TrajectoryRibbon
+
+@export var ribbon_width := 0.05
+@export var ribbon_opacity := 0.75
 
 @export var color := Color.BLACK:
 	set(value):
@@ -44,17 +47,8 @@ func _enter_tree() -> void:
 	set_multiplayer_authority(int(name))
 
 func _ready() -> void:
-	var mm = MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	var sphere = SphereMesh.new()
-	sphere.radius = 0.08
-	sphere.height = 0.16
-	mm.mesh = sphere
-	mm.instance_count = TRAJECTORY_POINTS
-	trajectory.multimesh = mm
-
 	if is_multiplayer_authority():
-		trajectory.visible = false
+		trajectory_ribbon.visible = false
 		color = PlayerData.my_color
 		player_name = PlayerData.my_name
 	else:
@@ -98,10 +92,10 @@ func _process(_delta: float) -> void:
 		return
 
 	if not aim_visible:
-		trajectory.visible = false
+		trajectory_ribbon.visible = false
 		return
 
-	trajectory.visible = true
+	trajectory_ribbon.visible = true
 
 	var mouse_pos := get_viewport().get_mouse_position()
 	var ball_screen = camera.unproject_position(rigid_body.global_position)
@@ -137,7 +131,7 @@ func _generate_direct_trajectory(origin: Vector3, dir: Vector3, power: float) ->
 	pos.y = 0.1
 	var damp = rigid_body.linear_damp
 	var dt = 1.0 / 60.0
-	var max_points = trajectory.multimesh.instance_count
+	var max_points = TRAJECTORY_POINTS
 
 	for i in range(max_points):
 		points.append(pos)
@@ -155,7 +149,7 @@ func _generate_lob_trajectory(origin: Vector3, dir: Vector3, power: float, ratio
 	var damp = rigid_body.linear_damp
 	var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 	var dt = 1.0 / 60.0
-	var max_points = trajectory.multimesh.instance_count
+	var max_points = TRAJECTORY_POINTS
 
 	for _i in range(600):
 		raw.append(pos)
@@ -173,11 +167,41 @@ func _generate_lob_trajectory(origin: Vector3, dir: Vector3, power: float, ratio
 	return result
 
 func _update_trajectory_mesh(points: PackedVector3Array) -> void:
-	var mm = trajectory.multimesh
-	var count = mini(points.size(), mm.instance_count)
-	mm.visible_instance_count = count
-	for i in range(count):
-		mm.set_instance_transform(i, Transform3D(Basis(), points[i] - global_position))
+	if points.size() < 2:
+		trajectory_ribbon.mesh = null
+		return
+
+	var st = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	var half_w = ribbon_width * 0.5
+	var cam_pos = camera.global_position
+	var local_pos = global_position
+
+	for i in range(points.size()):
+		var world_p = points[i]
+		var local_p = world_p - local_pos
+		var to_cam = (cam_pos - world_p).normalized()
+
+		var seg_dir: Vector3
+		if i < points.size() - 1:
+			seg_dir = (points[i + 1] - world_p).normalized()
+		else:
+			seg_dir = (world_p - points[i - 1]).normalized()
+
+		var right = to_cam.cross(seg_dir).normalized() * half_w
+		var t = float(i) / (points.size() - 1) if points.size() > 1 else 0.0
+		var alpha = lerpf(ribbon_opacity, 0.0, t)
+		var col = Color(1, 1, 1, alpha)
+
+		st.set_uv(Vector2(t, 0.0))
+		st.set_color(col)
+		st.add_vertex(local_p - right)
+
+		st.set_uv(Vector2(t, 1.0))
+		st.set_color(col)
+		st.add_vertex(local_p + right)
+
+	trajectory_ribbon.mesh = st.commit()
 
 func apply_shot() -> void:
 	var impulse: Vector3
