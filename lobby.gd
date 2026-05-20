@@ -42,4 +42,5 @@ func _on_join_pressed() -> void:
 	print("Connecting to %s..." % ip)
 
 func _on_connected_to_server():
+	print("Connected!")
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
