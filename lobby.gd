@@ -2,7 +2,7 @@ extends Control
 
 const DEFAULT_PORT := 4567
 const MAX_PLAYERS := 5
-const MAIN_SCENE_PATH = "uid://bja62h36dhan5"
+const MAIN_SCENE_PATH = "res://main.tscn"
 
 @onready var ip_input: LineEdit = $VBox/IPInput
 @onready var name_input: LineEdit = $VBox/NameInput
