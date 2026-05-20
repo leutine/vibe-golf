@@ -31,9 +31,12 @@ properties/4/spawn = true
 properties/4/replication_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_traj"]
-vertex_color_use_as_albedo = true
 transparency = 1
 no_depth_test = true
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.8, 0, 0)
+emission_enabled = true
+emission = Color(1, 0.8, 0, 0)
 
 [node name="Ball" type="Node3D" unique_id=810565997 groups=["Players"]]
 script = ExtResource("1_ball_script")
