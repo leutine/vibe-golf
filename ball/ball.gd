@@ -44,6 +44,15 @@ func _enter_tree() -> void:
 	set_multiplayer_authority(int(name))
 
 func _ready() -> void:
+	var mm = MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	var sphere = SphereMesh.new()
+	sphere.radius = 0.08
+	sphere.height = 0.16
+	mm.mesh = sphere
+	mm.instance_count = TRAJECTORY_POINTS
+	trajectory.multimesh = mm
+
 	if is_multiplayer_authority():
 		trajectory.visible = false
 		color = PlayerData.my_color
@@ -139,7 +148,7 @@ func _generate_direct_trajectory(origin: Vector3, dir: Vector3, power: float) ->
 	return points
 
 func _generate_lob_trajectory(origin: Vector3, dir: Vector3, power: float, ratio: float) -> PackedVector3Array:
-	var points := PackedVector3Array()
+	var raw := PackedVector3Array()
 	var angle = deg_to_rad(LOB_ANGLE + ratio * LOB_ANGLE_RANGE)
 	var vel = Vector3(dir.x * cos(angle), sin(angle), dir.z * cos(angle)) * power
 	var pos = origin
@@ -148,14 +157,20 @@ func _generate_lob_trajectory(origin: Vector3, dir: Vector3, power: float, ratio
 	var dt = 1.0 / 60.0
 	var max_points = trajectory.multimesh.instance_count
 
-	for i in range(max_points):
-		points.append(pos)
-		if pos.y <= 0.05 and i > 5:
+	for _i in range(600):
+		raw.append(pos)
+		if pos.y <= 0.05 and raw.size() > 5:
 			break
 		vel.y -= gravity * dt
 		vel *= (1.0 - damp * dt)
 		pos += vel * dt
-	return points
+
+	if raw.size() <= max_points:
+		return raw
+	var result := PackedVector3Array()
+	for i in range(max_points):
+		result.append(raw[i * (raw.size() - 1) / (max_points - 1)])
+	return result
 
 func _update_trajectory_mesh(points: PackedVector3Array) -> void:
 	var mm = trajectory.multimesh
