@@ -21,6 +21,7 @@ var current_level_index := -1
 
 func _ready() -> void:
 	goal_label.visible = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	spawner.spawn_function = custom_spawn_ball
 	$Balls.child_entered_tree.connect(_on_ball_spawned)
@@ -34,6 +35,13 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_ESCAPE:
+			if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			else:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			return
+
 		var key = event.keycode
 		if not multiplayer.is_server():
 			return
@@ -86,6 +94,7 @@ func _on_ball_spawned(node: Node) -> void:
 	}
 
 	if id == multiplayer.get_unique_id():
+		ball.camera_controller = $CameraController
 		$CameraController.set_target(ball)
 
 func on_peer_connected(id: int) -> void:

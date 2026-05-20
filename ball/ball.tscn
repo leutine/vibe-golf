@@ -38,6 +38,7 @@ albedo_color = Color(1, 1, 1, 1)
 billboard = 1
 transparency = 1
 vertex_color_use_as_albedo = true
+flags_no_depth_test = true
 
 [sub_resource type="MultiMesh" id="MultiMesh_traj"]
 transform_format = 1
@@ -67,6 +68,7 @@ replication_config = SubResource("SceneReplicationConfig_6plaf")
 visible = false
 material_override = SubResource("StandardMaterial3D_traj")
 cast_shadow = 0
+extra_cull_margin = 10.0
 multimesh = SubResource("MultiMesh_traj")
 
 [node name="NameLabel" type="Label3D" parent="." unique_id=287670907]
