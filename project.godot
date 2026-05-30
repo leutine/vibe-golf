@@ -37,3 +37,9 @@ limits/web_socket_max_frame_sizekb=256
 [physics]
 
 3d/physics_engine="Jolt Physics"
+
+[steam]
+
+initialization/initialize_on_startup=false
+initialization/embed_callbacks=false
+multiplayer_peer/max_channels=4
